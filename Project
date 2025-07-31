@@ -1,0 +1,664 @@
+
+
+Integrated Project: Maji Ndogo Part 1
+© ExploreAI Academy
+
+Beginning Our Data-Driven Journey in Maji Ndogo
+⚠️ This notebook will not run on Google Colab because it cannot connect to a local database. Please make sure that this notebook is running on the same local machine as your MySQL Workbench installation and MySQL md_water_services database.
+
+-- Maji Ndogo: From analysis to action
+-- Beginning Our Data-Driven Journey in Maji Ndogo
+
+-- The database contain of 60,000 records, meticulously collected by our devoted team of engineers, field workers, scientists, and analysts.
+
+-- Now, the next crucial phase of our mission begins. We need to make sense of this immense data trove and extract meaningful insights. -- We must breathe life into these records and listen to the story they are telling us.
+
+-- I will load this database and thoroughly acquaint yourselves with it. Dive deep, explore its structure, understand the variables -- and the connections between them. Each record is a chapter of our story; each query you run is a thread weaving that story together. -- This is a process of discovery - to uncover the patterns and nuances in our data. It's a chance to ask the right questions, to identify the -- pressing problems, and to set the course for our data-driven solutions.
+
+-- You've probably seen President Naledi's message by now. She has emphasised the importance of our newly collected survey data and -- how vital it is for us to dive in and start making sense of it. As the senior data analyst, I've taken a close look at her message and have -- broken it down into a series of tasks that we need to tackle. So, let's roll up our sleeves and get started!
+
+Connecting to our MySQL database
+Using our Access_to_Basic_Services table created in MySQL Workbench, we want to answer some questions on the range of our dataset. We can apply the same queries in MySQL Workbench and in this notebook if we connect to our MySQL server. Since we have a MySQL database, we can connect to it using mysql and pymysql.
+
+!pip install jupysql --upgrade
+# To display all row in ouputs
+%config SqlMagic.displaylimit = None
+# Load and activate the SQL extension to allow us to execute SQL in a Jupyter notebook. 
+# If you get an error here, make sure that mysql and pymysql are installed correctly. 
+
+%load_ext sql
+# Establish a connection to the local database using the '%sql' magic command.
+# Replace 'password' with our connection password and `db_name` with our database name. 
+# If you get an error here, please make sure the database name or password is correct.
+
+%sql mysql+pymysql://root:Mohamed_1@localhost:3306/md_water_services
+Connecting and switching to connection 'mysql+pymysql://root:***@localhost:3306/md_water_services'
+-- 1. Get to know our data: Before we do anything else, let's take a good look at our data. We'll load up the database and pull up the first -- few records from each table. It's like getting to know a new city - we need to explore the lay of the land before we can start our journey
+
+-- 2. Dive into the water sources: We've got a whole table dedicated to the types of water sources in our database. Let's dig into it and -- figure out all the unique types of water sources we're dealing with.
+
+-- 3. Unpack the visits to water sources: The 'visits' table in our database is like a logbook of all the trips made to different water -- sources. We need to unravel this logbook to understand the frequency and distribution of these visits. Let's identify which locations -- have been visited more than a certain number of times.
+
+-- 4. Assess the quality of water sources: The quality of water sources is a pretty big deal. We'll turn to the water_quality table to -- find records where the subjective_quality_score is within a certain range and the visit_count is above a certain threshold. This -- should help us spot the water sources that are frequently visited and have a decent quality score.
+
+-- 5. Investigate any pollution issues: We can't overlook the pollution status of our water sources. Let's find those water sources where -- the pollution_tests result came back as 'dirty' or 'biologically contaminated'. This will help us flag the areas that need immediate attention
+
+-- By working through these tasks, we'll not only be answering President Naledi's call to explore the database and extract meaningful insights, but we'll also be honing our SQL skills. It's a win-win situation! So, are you ready to dive in and start exploring with me? -- Let's do this!
+
+Note
+-- This will give you a list of all the tables in the database. SHOW TABLES -- A data dictionary table has been embedded into the database. If you query the data_dictionary table, an explanation of each column is given there.
+
+%%sql
+SELECT
+     *
+FROM
+    data_dictionary
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+49 rows affected.
+table_name	column_name	description	datatype	related_to
+employee	assigned_employee_id	Unique ID assigned to each employee	INT	visits
+employee	employee_name	Name of the employee	VARCHAR(255)	
+employee	phone_number	Contact number of the employee	VARCHAR(15)	
+employee	email	Email address of the employee	VARCHAR(255)	
+employee	address	Residential address of the employee	VARCHAR(255)	
+employee	town_name	Name of the town where the employee resides	VARCHAR(255)	
+employee	province_name	Name of the province where the employee resides	VARCHAR(255)	
+employee	position	Position or job title of the employee	VARCHAR(255)	
+visits	record_id	Unique ID assigned to each visit	int	water_quality, water_source
+visits	location_id	ID of the location visited	varchar(255)	location
+Truncated to displaylimit of 10.
+%%sql
+-- So let's have a look at one of these tables, Let's use location so we can use that killer query, 
+-- SELECT * but remember to limit it and tell
+# it which table we are looking at. PAGE(6)
+SELECT
+     *
+FROM
+    location
+LIMIT 50
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+50 rows affected.
+location_id	address	province_name	town_name	location_type
+AkHa00000	2 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00001	10 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00002	9 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00003	139 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00004	17 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00005	125 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00006	98 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00007	21 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00008	11 Addis Ababa Road	Akatsi	Harare	Urban
+AkHa00009	6 Addis Ababa Road	Akatsi	Harare	Urban
+Truncated to displaylimit of 10.
+%%sql
+# Ok, so let's look at the visits table. PAGE(7)
+SELECT
+     *
+FROM
+    visits
+LIMIT 50
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+50 rows affected.
+record_id	location_id	source_id	time_of_record	visit_count	time_in_queue	assigned_employee_id
+0	SoIl32582	SoIl32582224	2021-01-01 09:10:00	1	15	12
+1	KiRu28935	KiRu28935224	2021-01-01 09:17:00	1	0	46
+2	HaRu19752	HaRu19752224	2021-01-01 09:36:00	1	62	40
+3	AkLu01628	AkLu01628224	2021-01-01 09:53:00	1	0	1
+4	AkRu03357	AkRu03357224	2021-01-01 10:11:00	1	28	14
+5	KiRu29315	KiRu29315224	2021-01-01 10:17:00	1	9	40
+6	AkRu05234	AkRu05234224	2021-01-01 10:18:00	1	0	30
+7	KiRu28520	KiRu28520224	2021-01-01 10:28:00	1	0	34
+8	HaZa21742	HaZa21742224	2021-01-01 10:37:00	1	0	6
+9	AmDa12214	AmDa12214224	2021-01-01 10:58:00	1	0	36
+Truncated to displaylimit of 10.
+%%sql
+# Ok, so let's look at the water_source table to see what a 'source' is. Normally "_id" columns are related to another table.
+SELECT
+     *
+FROM
+    water_source
+LIMIT 50
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+50 rows affected.
+source_id	type_of_water_source	number_of_people_served
+AkHa00000224	tap_in_home	956
+AkHa00001224	tap_in_home_broken	930
+AkHa00002224	tap_in_home_broken	486
+AkHa00003224	well	364
+AkHa00004224	tap_in_home_broken	942
+AkHa00005224	tap_in_home	736
+AkHa00006224	tap_in_home	882
+AkHa00007224	tap_in_home	554
+AkHa00008224	well	398
+AkHa00009224	well	346
+Truncated to displaylimit of 10.
+%%sql
+
+# 2. Dive into the water sources:
+# Now that you're familiar with the structure of the tables, let's dive deeper. We need to understand the types of water sources we're
+# dealing with. Can you figure out which table contains this information?
+SELECT DISTINCT 
+     type_of_water_source
+FROM
+    water_source
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+5 rows affected.
+type_of_water_source
+tap_in_home
+tap_in_home_broken
+well
+shared_tap
+river
+So I get this when I run it:
+-- type_of_water_source 1- tap_in_home 2- tap_in_home_broken 3- well 4- shared_tap 5- river -- Let me quickly bring you up to speed on these water source types:
+
+-- 1. River - People collect drinking water along a river. This is an open water source that millions of people use in Maji Ndogo. Water from -- a river has a high risk of being contaminated with biological and other pollutants, so it is the worst source of water possible.
+
+-- 2. Well - These sources draw water from underground sources, and are commonly shared by communities. Since these are closed water -- sources, contamination is much less likely compared to a river. Unfortunately, due to the aging infrastructure and the corruption of officials in the past, many of our wells are not clean.
+
+-- 3. Shared tap - This is a tap in a public area shared by communities
+
+-- 4. Tap in home - These are taps that are inside the homes of our citizens. On average about 6 people live together in Maji Ndogo, so -- each of these taps serves about 6 people.
+
+-- 5. Broken tap in home - These are taps that have been installed in a citizen’s home, but the infrastructure connected to that tap is not -- functional. This can be due to burst pipes, broken pumps or water treatment plants that are not working.
+
+Note
+-- An important note on the home taps: About 6-10 million people have running water installed in their homes in Maji Ndogo, including broken taps. If we were to document this, we would have a row of data for each home, so that one record is one tap. That means our database would contain about 1 million rows of data, which may slow our systems down. For now, the surveyors combined the data of many households together into a single record.
+
+-- For example, the first record, AkHa00000224 is for a tap_in_home that serves 956 people. What this means is that the records of about 160 homes nearby were combined into one record, with an average of 6 people living in each house 160 x 6 ≈ 956. So 1 tap_in_home or tap_in_home_broken record actually refers to multiple households, with the sum of the people living in these homes equal to number_of_people_served.
+
+%%sql
+
+-- Write an SQL query that retrieves all records from this table where the time_in_queue is more than some crazy time,
+-- say 500 min. How
+# would it feel to queue 8 hours for water? PAGE(16)
+
+SELECT 
+     *
+FROM
+   visits
+WHERE 
+    time_in_queue > 500
+# How is this possible? Can you imagine queueing 8 hours for water?
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+105 rows affected.
+record_id	location_id	source_id	time_of_record	visit_count	time_in_queue	assigned_employee_id
+899	SoRu35083	SoRu35083224	2021-01-16 10:14:00	6	515	28
+2304	SoKo33124	SoKo33124224	2021-02-06 07:53:00	5	512	16
+2315	KiRu26095	KiRu26095224	2021-02-06 14:32:00	3	529	8
+3206	SoRu38776	SoRu38776224	2021-02-20 15:03:00	5	509	46
+3701	HaRu19601	HaRu19601224	2021-02-27 12:53:00	3	504	0
+4154	SoRu38869	SoRu38869224	2021-03-06 10:44:00	2	533	24
+5483	AmRu14089	AmRu14089224	2021-03-27 18:15:00	4	509	12
+9177	SoRu37635	SoRu37635224	2021-05-22 18:48:00	2	515	1
+9648	SoRu36096	SoRu36096224	2021-05-29 11:24:00	2	533	3
+11631	AkKi00881	AkKi00881224	2021-06-26 06:15:00	6	502	32
+Truncated to displaylimit of 10.
+%%sql
+
+# I am wondering what type of water sources take this long to queue for. 
+# We will have to find that information in another table that lists
+# the types of water sources. If I remember correctly, the table has type_of_water_source, and a source_id column.
+# So let's write
+# down a couple of these source_id values from our results, and search for them in the other table. PAGE(17)
+# AkKi00881224
+# SoRu37635224
+# SoRu36096224
+# If we just select the first couple of records of the visits table without a WHERE filter,
+# we can see that some of these rows also have 0
+# mins queue time. So let's write down one or two of these too
+
+SELECT
+    *
+FROM
+    water_source
+WHERE
+    source_id = 'AkKi00881224'
+OR  source_id = 'SoRu37635224' 
+OR  source_id = 'SoRu36096224' 
+OR  source_id = 'AkRu05234224' 
+OR  source_id = 'HaZa21742224'
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+5 rows affected.
+source_id	type_of_water_source	number_of_people_served
+AkKi00881224	shared_tap	3398
+AkRu05234224	tap_in_home_broken	496
+HaZa21742224	well	308
+SoRu36096224	shared_tap	3786
+SoRu37635224	shared_tap	3920
+%%sql
+
+# 4. Assess the quality of water sources:
+# The quality of our water sources is the whole point of this survey. 
+# We have a table that contains a quality score for each visit made
+# about a water source that was assigned by a Field surveyor. They assigned a score to each source from 1, 
+# being terrible, to 10 for a
+# good, clean water source in a home. Shared taps are not rated as high, 
+# and the score also depends on how long the queue times are.
+
+# Let's check if this is true. 
+# The surveyors only made multiple visits to shared taps and did not revisit other types of water sources. So
+# there should be no records of second visits to locations where there are good water sources, like taps in homes.
+
+# So I will write a query to find records where the subject_quality_score is 10
+# -- only looking for home taps -- and where the source
+# was visited a second time. What will this tell us?   PAGE(18)
+
+SELECT 
+     *
+FROM
+   water_quality
+WHERE
+    subjective_quality_score = 10
+AND 
+   visit_count = 2
+
+# I get 218 rows of data. But this should not be happening!
+# I think some of our employees may have made mistakes. 
+# To be honest, I'll be surprised if there are no errors in our data at this scale! 
+# I’m going to send Pres. Naledi a message that we have to recheck some of
+# these sources. We can appoint an Auditor to check some of the data independently, 
+# and make sure we have the right information!
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+218 rows affected.
+record_id	subjective_quality_score	visit_count
+59	10	2
+137	10	2
+269	10	2
+363	10	2
+378	10	2
+618	10	2
+752	10	2
+801	10	2
+819	10	2
+850	10	2
+Truncated to displaylimit of 10.
+%%sql
+
+-- 5. Investigate pollution issues:
+-- Did you notice that we recorded contamination/pollution data for all of the well sources? 
+-- Find the right table and print the first few rows.
+
+-- Find the right table and print the first few rows.
+
+SELECT 
+     *
+FROM
+   well_pollution
+LIMIT 10
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+10 rows affected.
+source_id	date	description	pollutant_ppm	biological	results
+KiRu28935224	2021-01-04 09:17:00	Bacteria: Giardia Lamblia	0.0	495.898	Contaminated: Biological
+AkLu01628224	2021-01-04 09:53:00	Bacteria: E. coli	0.0	6.09608	Contaminated: Biological
+HaZa21742224	2021-01-04 10:37:00	Inorganic contaminants: Zinc, Zinc, Lead, Cadmium	2.715	0.0	Contaminated: Chemical
+HaRu19725224	2021-01-04 11:04:00	Clean	0.0288593	9.56996e-05	Clean
+SoRu35703224	2021-01-04 11:29:00	Bacteria: E. coli	0.0	22.5009	Contaminated: Biological
+AkHa00070224	2021-01-04 11:42:00	Inorganic contaminants: Cadmium	5.46739	0.0	Contaminated: Chemical
+HaSe21346224	2021-01-04 11:52:00	Clean	0.0140376	8.98989e-05	Clean
+HaYa21468224	2021-01-04 12:03:00	Inorganic contaminants: Chromium, Barium, Chromium, Lead	6.05137	0.0	Contaminated: Chemical
+SoRu36278224	2021-01-04 12:24:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+AkLu02155224	2021-01-04 12:29:00	Inorganic contaminants: Selenium, Arsenic	7.64106	0.0	Contaminated: Chemical
+Truncated to displaylimit of 10.
+Water Quality Integrity Check
+-- It looks like our scientists diligently recorded the water quality of all the wells. Some are contaminated with biological contaminants, -- while others are polluted with an excess of heavy metals and other pollutants. Based on the results, each well was classified as Clean, -- Contaminated: Biological or Contaminated: Chemical. It is important to know this because wells that are polluted with bio- or -- other contaminants are not safe to drink. It looks like they recorded the source_id of each test, so we can link it to a source, at some -- place in Maji Ndogo. -- In the well pollution table, the descriptions are notes taken by our scientists as text, so it will be challenging to process it. The -- biological column is in units of CFU/mL, so it measures how much contamination is in the water. 0 is clean, and anything more than -- 0.01 is contaminated. -- Let's check the integrity of the data. The worst case is if we have contamination, but we think we don't. People can get sick, so we -- need to make sure there are no errors here.
+
+%%sql
+
+-- So, write a query that checks if the results is Clean but the biological column is > 0.01.
+ SELECT 
+     *
+FROM
+   well_pollution
+WHERE
+    biological > 0.01
+LIMIT 50
+-- If we compare the results of this query to the entire table,
+-- it seems like we have some inconsistencies in how the well statuses are
+-- recorded. Specifically, it seems that some data input personnel 
+-- might have mistaken the description field for determining the cleanliness of the water.
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+50 rows affected.
+source_id	date	description	pollutant_ppm	biological	results
+KiRu28935224	2021-01-04 09:17:00	Bacteria: Giardia Lamblia	0.0	495.898	Contaminated: Biological
+AkLu01628224	2021-01-04 09:53:00	Bacteria: E. coli	0.0	6.09608	Contaminated: Biological
+SoRu35703224	2021-01-04 11:29:00	Bacteria: E. coli	0.0	22.5009	Contaminated: Biological
+SoRu36278224	2021-01-04 12:24:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+SoRu36313224	2021-01-04 13:46:00	Bacteria: Vibrio cholerae	0.0	182.88	Contaminated: Biological
+KiMr24968224	2021-01-04 13:52:00	Bacteria: E. coli	0.0	44.2164	Contaminated: Biological
+HaDj16683224	2021-01-07 10:16:00	Virus: Hepatitis A Virus	0.0	96.6341	Contaminated: Biological
+HaRu18434224	2021-01-07 11:16:00	Bacteria: Shigella	0.0	318.664	Contaminated: Biological
+AkLu02211224	2021-01-07 12:49:00	Bacteria: E. coli	0.0	3.57905	Contaminated: Biological
+HaDe16499224	2021-01-07 12:53:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+Truncated to displaylimit of 10.
+Biological Contamination Data Integrity Analysis
+-- It seems like, in some cases, if the description field begins with the word “Clean”, the results have been classified as “Clean” in the results column, even though the biological column is > 0.01
+
+-- When we work with real-world data we may find inconsistencies due to data being misinterpreted based on a description rather than its actual values. Let’s dive deeper into the cause of the issue with the biological contamination data.
+
+-- Vuyisile has told me that the descriptions should only have the word “Clean” if there is no biological contamination (and no chemical pollutants). Some data personnel must have copied the data from the scientist's notes into our database incorrectly. We need to find and remove the “Clean” part from all the descriptions that do have a biological contamination so this mistake is not made again.
+
+-- The second issue has arisen from this error, but it is much more problematic. Some of the field surveyors have marked wells as Clean in the results column because the description had the word “Clean” in it, even though they have a biological contamination. So we need to find all the results that have a value greater than 0.01 in the biological column and have been set to Clean in the results column.
+
+-- First, let's look at the descriptions. We need to identify the records that mistakenly have the word Clean in the description. However, it is important to remember that not all of our field surveyors used the description to set the results – some checked the actual data
+
+%%sql
+-- To find these descriptions, search for the word Clean with additional characters after it. 
+-- As this is what separates incorrect descriptions from the records that should have "Clean".
+
+SELECT 
+     *
+FROM
+   well_pollution
+WHERE
+    description LIKE 'Clean_%'
+-- The query should return 38 wrong descriptions.
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+38 rows affected.
+source_id	date	description	pollutant_ppm	biological	results
+AkRu06489224	2021-01-10 09:44:00	Clean Bacteria: Giardia Lamblia	0.0897904	38.467	Clean
+KiRu25473224	2021-02-07 15:51:00	Clean Bacteria: Giardia Lamblia	0.0630094	24.4536	Clean
+HaRu17401224	2021-03-01 13:44:00	Clean Bacteria: Giardia Lamblia	0.0649209	25.8129	Clean
+AkRu07137224	2021-03-04 13:41:00	Clean Bacteria: Giardia Lamblia	0.0656843	18.2978	Clean
+KiRu27205224	2021-03-13 14:17:00	Clean Bacteria: Giardia Lamblia	0.0418018	49.4281	Clean
+AkHa00514224	2021-04-11 12:11:00	Clean Bacteria: Giardia Lamblia	0.0305404	22.0255	Clean
+AmAm09776224	2021-05-23 11:28:00	Clean Bacteria: Giardia Lamblia	0.0963821	13.6574	Clean
+SoIl32894224	2021-07-11 11:37:00	Clean Bacteria: Giardia Lamblia	0.0712408	5.44957	Clean
+AkRu07366224	2021-07-23 11:19:00	Clean Bacteria: Giardia Lamblia	0.0969458	26.0308	Clean
+KiHa23443224	2021-09-05 12:34:00	Clean Bacteria: Giardia Lamblia	0.0828	13.7162	Clean
+Truncated to displaylimit of 10.
+%%sql
+-- Now we need to fix these descriptions so that we don’t encounter this issue again in the future.
+
+-- Looking at the results we can see two different descriptions that we need to fix:
+-- 1. All records that mistakenly have Clean Bacteria: E. coli should updated to Bacteria: E. coli
+-- 2. All records that mistakenly have Clean Bacteria: Giardia Lamblia should updated to Bacteria: Giardia Lamblia
+
+-- The second issue we need to fix is in our results column.
+-- We need to update the results column from Clean to Contaminated: Biological 
+-- where the biological column has a value greater than 0.01.
+SELECT 
+     *
+FROM
+   well_pollution
+WHERE 
+    pollutant_ppm > 0.01
+AND description LIKE 'Clean_%' 
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+38 rows affected.
+source_id	date	description	pollutant_ppm	biological	results
+AkRu06489224	2021-01-10 09:44:00	Clean Bacteria: Giardia Lamblia	0.0897904	38.467	Clean
+KiRu25473224	2021-02-07 15:51:00	Clean Bacteria: Giardia Lamblia	0.0630094	24.4536	Clean
+HaRu17401224	2021-03-01 13:44:00	Clean Bacteria: Giardia Lamblia	0.0649209	25.8129	Clean
+AkRu07137224	2021-03-04 13:41:00	Clean Bacteria: Giardia Lamblia	0.0656843	18.2978	Clean
+KiRu27205224	2021-03-13 14:17:00	Clean Bacteria: Giardia Lamblia	0.0418018	49.4281	Clean
+AkHa00514224	2021-04-11 12:11:00	Clean Bacteria: Giardia Lamblia	0.0305404	22.0255	Clean
+AmAm09776224	2021-05-23 11:28:00	Clean Bacteria: Giardia Lamblia	0.0963821	13.6574	Clean
+SoIl32894224	2021-07-11 11:37:00	Clean Bacteria: Giardia Lamblia	0.0712408	5.44957	Clean
+AkRu07366224	2021-07-23 11:19:00	Clean Bacteria: Giardia Lamblia	0.0969458	26.0308	Clean
+KiHa23443224	2021-09-05 12:34:00	Clean Bacteria: Giardia Lamblia	0.0828	13.7162	Clean
+Truncated to displaylimit of 10.
+Ok, so here is how I did it: PAGE(23)
+-- Case 1a: Update descriptions that mistakenly mention -- Clean Bacteria: E. coli to Bacteria: E. coli -- Case 1b: Update the descriptions that mistakenly mention -- Clean Bacteria: Giardia Lamblia to Bacteria: Giardia Lamblia -- Case 2: Update the resulttoContaminated: Biologicalwhere --biologicalis greater than 0.01 plus current results isClean`
+
+%%sql
+-- So if we now run our query:
+
+SET
+   sql_safe_updates = 0;
+UPDATE 
+     well_pollution
+SET 
+   description = 'Bacteria: E. coli'
+WHERE 
+   description = 'Clean Bacteria: E. coli' ;
+UPDATE 
+     well_pollution
+SET 
+   description = 'Bacteria: Giardia Lamblia'
+WHERE 
+     description = 'Clean Bacteria: Giardia Lamblia' ;
+UPDATE 
+     well_pollution
+SET 
+   results = 'Contaminated: Biological'
+WHERE
+     biological > 0.01 AND results = 'Clean';
+     
+	
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+26 rows affected.
+12 rows affected.
+64 rows affected.
+%%sql
+
+-- Put a test query here to make sure we fixed the errors.
+-- Use the query we used to show all of the erroneous rows
+
+SELECT 
+     *
+FROM
+   well_pollution
+WHERE 
+    pollutant_ppm > 0.01
+AND description LIKE 'Clean_%' 
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+source_id	date	description	pollutant_ppm	biological	results
+Questions of Integrated Project: Maji Ndogo Part 1
+%%sql
+
+-- Q1 
+-- What is the address of Bello Azibo?
+SELECT 
+     *
+FROM
+    employee
+WHERE
+    employee_name = 'Bello Azibo'
+-- ------------------------------------> ANSWER: 129 Ziwa La Kioo Road
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+1 rows affected.
+assigned_employee_id	employee_name	phone_number	email	address	province_name	town_name	position
+1	Bello Azibo	+99643864786	None	129 Ziwa La Kioo Road	Kilimani	Rural	Field Surveyor
+%%sql
+
+-- Q2
+-- What is the name and phone number of our Microbiologist?
+
+SELECT 
+     *
+FROM
+    employee
+WHERE
+    position = 'Micro biologist'
+-- ------------------------------------> ANSWER: Vuyisile Ghadir, +99712584936
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+1 rows affected.
+assigned_employee_id	employee_name	phone_number	email	address	province_name	town_name	position
+102	Vuyisile Ghadir	+99712584936	None	104 Kenyatta Street	Akatsi	Rural	Micro Biologist
+%%sql
+
+-- Q3  
+-- What is the source_id of the water source shared by the most number of people? Hint: Use a comparison operator.
+
+SELECT 
+     *
+FROM
+    water_source
+WHERE
+    number_of_people_served 
+ORDER BY 
+      number_of_people_served DESC
+LIMIT 1
+-- ------------------------------------> ANSWER: AkRu05603224
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+1 rows affected.
+source_id	type_of_water_source	number_of_people_served
+AkRu05603224	shared_tap	3998
+%%sql
+
+-- Q4 
+-- What is the population of Maji Ndogo?    Hint: Start by searching the data_dictionary table for the word 'population'.
+
+SELECT 
+    pop_n/1000
+FROM
+	global_water_access
+WHERE
+    name = 'Maji Ndogo'
+-- ------------------------------------> ANSWER: 27.6 million people
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+2 rows affected.
+pop_n/1000
+27.628099609375
+27.628099609375
+%%sql
+
+-- Q5
+-- Which SQL query returns records of employees who are Civil Engineers residing in Dahabu or living on an avenue?
+
+SELECT 
+     *
+FROM 
+     employee
+WHERE 
+     position = 'Civil Engineer'
+AND 
+     (province_name = 'Dahabu' OR address LIKE '%Avenue%') ;
+-- ------------------------------------> ANSWER: Above SQL query
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+2 rows affected.
+assigned_employee_id	employee_name	phone_number	email	address	province_name	town_name	position
+71	Jengo Rudo	+99317854629	None	33 Angélique Kidjo Avenue	Amanzi	Dahabu	Civil Engineer
+81	Nia Vuyisile	+99273841596	None	52 Moroni Avenue	Sokoto	Rural	Civil Engineer
+%%sql
+
+ -- Q6  
+ -- Create a query to identify potentially suspicious field workers based on an anonymous tip. This is the description we are given:
+-- The employee’s phone number contained the digits 86 or 11. 
+-- The employee’s last name started with either an A or an M. 
+-- The employee was a Field Surveyor.
+-- Which option is correct?  
+SELECT 
+     *
+FROM 
+     employee
+WHERE
+     (phone_number  LIKE '%11%' OR phone_number LIKE '%86%')
+AND
+   (employee_name LIKE '%A%' OR employee_name LIKE '%M%')
+AND 
+   position = 'Field Surveyor'; 
+-- ------------------------------------> ANSWER: Bello Azibo and Zuriel Matembo both fit this description.
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+2 rows affected.
+assigned_employee_id	employee_name	phone_number	email	address	province_name	town_name	position
+1	Bello Azibo	+99643864786	None	129 Ziwa La Kioo Road	Kilimani	Rural	Field Surveyor
+5	Zuriel Matembo	+99034075111	None	26 Bahari Ya Faraja Road	Kilimani	Rural	Field Surveyor
+%%sql
+
+-- Q7
+-- What is the result of the following query? Choose the most appropriate description of the results set.
+-- SELECT *
+-- FROM well_pollution
+-- WHERE description LIKE 'Clean_%' OR results = 'Clean' AND biological < 0.01;
+
+SELECT 
+     *
+FROM 
+     well_pollution
+WHERE
+      description LIKE 'Clean_%' OR results = 'Clean' AND biological < 0.01
+LIMIT 60000  
+-- ------------------------------------> ANSWER: 4916 records are returned. This query describes the pollution samples that had an insignificant amount of biological contamination.
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+4916 rows affected.
+source_id	date	description	pollutant_ppm	biological	results
+HaRu19725224	2021-01-04 11:04:00	Clean	0.0288593	9.56996e-05	Clean
+HaSe21346224	2021-01-04 11:52:00	Clean	0.0140376	8.98989e-05	Clean
+AkRu05973224	2021-01-04 13:44:00	Clean	0.084344	6.2396e-05	Clean
+AkHa00706224	2021-01-04 16:10:00	Clean	0.0862577	4.22834e-05	Clean
+HaRu20773224	2021-01-07 09:08:00	Clean	0.0599682	2.42289e-05	Clean
+AkRu04914224	2021-01-07 11:35:00	Clean	0.050281	9.42943e-05	Clean
+HaSe20931224	2021-01-07 11:46:00	Clean	0.0224843	9.87848e-05	Clean
+AmAm09579224	2021-01-07 13:02:00	Clean	0.0830754	1.10413e-05	Clean
+KiHa23405224	2021-01-07 15:29:00	Clean	0.0633972	5.88518e-05	Clean
+AmDa11574224	2021-01-07 15:51:00	Clean	0.0290295	6.11353e-05	Clean
+Truncated to displaylimit of 10.
+%%sql
+
+-- Q8
+-- Which query will identify the records with a quality score of 10, visited more than once?
+
+SELECT 
+     *
+FROM 
+    water_quality 
+WHERE
+     visit_count >= 2 
+     AND subjective_quality_score = 10 
+-- ------------------------------------> ANSWER: SELECT * FROM water_quality WHERE visit_count >= 2 AND subjective_quality_score = 10
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+1526 rows affected.
+record_id	subjective_quality_score	visit_count
+59	10	2
+67	10	3
+85	10	4
+128	10	5
+137	10	2
+232	10	3
+263	10	6
+269	10	2
+271	10	3
+317	10	4
+Truncated to displaylimit of 10.
+%%sql
+
+-- Q9 
+-- You have been given a task to correct the phone number for the employee named 'Bello Azibo'. 
+-- The correct number is +99643864786. Write the SQL query to accomplish this. Note: 
+-- Running these queries on the employee table may create issues later, so use the knowledge you have learned to avoid that.
+
+UPDATE
+      employee
+SET 
+      phone_number = '+99643864786'
+WHERE 
+      employee_name = 'Bello Azibo'; 
+-- ------------------------------------> ANSWER: UPDATE employee SET phone_number = '+99643864786' WHERE employee_name = 'Bello Azibo';
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+1 rows affected.
+%%sql
+
+-- Q10
+-- How many rows of data are returned for the following query?
+-- SELECT * 
+-- FROM well_pollution
+-- WHERE description
+-- IN ('Parasite: Cryptosporidium', 'biologically contaminated')
+-- OR (results = 'Clean' AND biological > 0.01);
+ 
+SELECT
+      *
+FROM      
+    well_pollution  
+WHERE      
+	description
+              IN ('Parasite: Cryptosporidium', 'biologically contaminated')
+	          OR (results = 'Clean' AND biological > 0.01)
+LIMIT 60000  
+ -- ------------------------------------> ANSWER: 570 rows
+Running query in 'mysql+pymysql://Explore:***@localhost:3306/mdd_water_services'
+570 rows affected.
+source_id	date	description	pollutant_ppm	biological	results
+SoRu36278224	2021-01-04 12:24:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+HaDe16499224	2021-01-07 12:53:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+KiRu26584224	2021-01-08 13:10:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+KiZu31025224	2021-01-10 14:36:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+HaRu17300224	2021-01-16 16:47:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+SoRu35543224	2021-01-18 09:49:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+KiRu26626224	2021-01-23 10:27:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+HaRu19424224	2021-01-29 14:15:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+KiAm22282224	2021-01-30 16:28:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+KiRu26616224	2021-02-05 13:48:00	Parasite: Cryptosporidium	0.0	485.162	Contaminated: Biological
+Truncated to displaylimit of 10.
